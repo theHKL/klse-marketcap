@@ -29,10 +29,9 @@ export default function AboutPage() {
       <section className="card p-6 mb-6">
         <h2 className="text-lg font-semibold text-navy mb-3">Data Sources</h2>
         <p className="text-slate text-sm leading-relaxed">
-          Market data is sourced from Financial Modeling Prep and updated every 5
-          minutes during Bursa Malaysia trading hours (9:00 AM — 12:30 PM, 2:30
-          PM — 5:00 PM MYT, Monday to Friday). End-of-day data is updated 30
-          minutes after market close.
+          Market data is updated every 5 minutes during Bursa Malaysia trading
+          hours (9:00 AM — 12:30 PM, 2:30 PM — 5:00 PM MYT, Monday to Friday).
+          End-of-day data is updated 30 minutes after market close.
         </p>
       </section>
 

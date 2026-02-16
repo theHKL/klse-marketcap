@@ -29,7 +29,7 @@ export default function Footer() {
           </div>
         </div>
         <p className="text-xs text-silver mt-4 text-center sm:text-left">
-          Data provided by Financial Modeling Prep. Not financial advice.
+          Not financial advice. Data may be delayed.
         </p>
       </div>
     </footer>

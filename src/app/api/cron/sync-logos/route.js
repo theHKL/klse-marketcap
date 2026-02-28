@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { getProfile } from '@/lib/fmp';
+import { getQuoteSummary } from '@/lib/yahoo/client';
+import { downloadLogoFromLogoDev } from '@/lib/supabase/storage';
 import {
   verifyCronSecret,
   createServiceClient,
@@ -21,23 +22,18 @@ export async function GET(request) {
   const logId = await logSyncStart(supabase, 'sync-logos');
 
   try {
-    // Fetch securities where logo_url is null or starts with http (external URL, not yet in storage)
+    // Fetch securities needing logos
     const { data: securities, error: fetchErr } = await supabase
       .from('securities')
-      .select('id, symbol, fmp_symbol, logo_url')
+      .select('id, symbol, yahoo_symbol, logo_url, website')
       .eq('is_actively_trading', true)
-      .not('fmp_symbol', 'is', null);
+      .not('yahoo_symbol', 'is', null);
 
     if (fetchErr) throw new Error(`Failed to fetch securities: ${fetchErr.message}`);
 
     // Filter to those needing logo upload
-    const needsLogo = (securities || []).filter(
-      (s) => !s.logo_url || s.logo_url.startsWith('http')
-    );
-
-    // Exclude securities whose logo_url already points to our Supabase Storage
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-    const toProcess = needsLogo.filter(
+    const toProcess = (securities || []).filter(
       (s) => !s.logo_url || !s.logo_url.includes(supabaseUrl)
     );
 
@@ -45,63 +41,31 @@ export async function GET(request) {
 
     for (const sec of toProcess) {
       try {
-        // Get the external logo URL
-        let imageUrl = sec.logo_url;
-
-        // If no logo_url stored yet, fetch from FMP profile
-        if (!imageUrl || !imageUrl.startsWith('http')) {
-          const profile = await getProfile(sec.fmp_symbol);
-          await sleep(100);
-          if (!profile || !profile.image) {
-            continue;
-          }
-          imageUrl = profile.image;
+        // Get website from Yahoo if not stored
+        let website = sec.website;
+        if (!website) {
+          const summary = await getQuoteSummary(sec.yahoo_symbol, ['summaryProfile']);
+          await sleep(200);
+          website = summary?.summaryProfile?.website || null;
         }
 
-        // Fetch the image as a blob
-        const imageRes = await fetch(imageUrl);
-        if (!imageRes.ok) {
-          console.warn(`[sync-logos] Failed to fetch image for ${sec.symbol}: ${imageRes.status}`);
+        // Use logo.dev to fetch and upload logo
+        const logoUrl = await downloadLogoFromLogoDev(supabase, sec.yahoo_symbol, website);
+        if (!logoUrl) {
           continue;
         }
 
-        const blob = await imageRes.blob();
-        const arrayBuffer = await blob.arrayBuffer();
-        const buffer = new Uint8Array(arrayBuffer);
+        const { error: updateErr } = await supabase
+          .from('securities')
+          .update({
+            logo_url: logoUrl,
+            website: website || sec.website,
+          })
+          .eq('id', sec.id);
 
-        // Determine file extension from content type
-        const contentType = imageRes.headers.get('content-type') || 'image/png';
-        const ext = contentType.includes('svg') ? 'svg' : contentType.includes('jpeg') || contentType.includes('jpg') ? 'jpg' : 'png';
-        const fileName = `${sec.symbol.toLowerCase()}.${ext}`;
-
-        // Upload to Supabase Storage bucket "logos"
-        const { error: uploadErr } = await supabase.storage
-          .from('logos')
-          .upload(fileName, buffer, {
-            contentType,
-            upsert: true,
-          });
-
-        if (uploadErr) {
-          console.error(`[sync-logos] Upload failed for ${sec.symbol}:`, uploadErr.message);
+        if (updateErr) {
+          console.error(`[sync-logos] Update logo_url failed for ${sec.symbol}:`, updateErr.message);
           continue;
-        }
-
-        // Get the public URL
-        const { data: publicUrlData } = supabase.storage
-          .from('logos')
-          .getPublicUrl(fileName);
-
-        if (publicUrlData?.publicUrl) {
-          const { error: updateErr } = await supabase
-            .from('securities')
-            .update({ logo_url: publicUrlData.publicUrl })
-            .eq('id', sec.id);
-
-          if (updateErr) {
-            console.error(`[sync-logos] Update logo_url failed for ${sec.symbol}:`, updateErr.message);
-            continue;
-          }
         }
 
         processed++;
@@ -116,6 +80,6 @@ export async function GET(request) {
   } catch (err) {
     console.error('[sync-logos] Fatal error:', err.message);
     await logSyncFail(supabase, logId, err.message);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return NextResponse.json({ error: 'Sync failed' }, { status: 500 });
   }
 }

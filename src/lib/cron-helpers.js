@@ -1,14 +1,22 @@
 import { createClient } from '@supabase/supabase-js';
+import { timingSafeEqual } from 'crypto';
 
 /**
  * Verify the CRON_SECRET from the Authorization header.
  * Returns true if valid, false otherwise.
  */
 export function verifyCronSecret(request) {
+  const secret = process.env.CRON_SECRET;
+  if (!secret) return false;
   const authHeader = request.headers.get('authorization');
   if (!authHeader) return false;
   const token = authHeader.replace('Bearer ', '');
-  return token === process.env.CRON_SECRET;
+  if (token.length !== secret.length) return false;
+  try {
+    return timingSafeEqual(Buffer.from(token), Buffer.from(secret));
+  } catch {
+    return false;
+  }
 }
 
 /**
@@ -17,7 +25,8 @@ export function verifyCronSecret(request) {
 export function createServiceClient() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY
+    process.env.SUPABASE_SERVICE_ROLE_KEY,
+    { auth: { persistSession: false } }
   );
 }
 

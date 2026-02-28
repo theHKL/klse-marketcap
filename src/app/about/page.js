@@ -1,78 +1,96 @@
+import Breadcrumbs from '@/components/layout/Breadcrumbs';
+
 export const metadata = {
-  title: "About",
-  description:
-    "Learn about KLSE MarketCap, our data sources, and important disclaimers.",
+  title: 'About',
+  description: 'About KLSE MarketCap - track Bursa Malaysia stocks, ETFs, and unit trusts with live prices and financial data.',
 };
+
+const features = [
+  {
+    title: 'Live Prices',
+    description:
+      'Real-time and delayed price data for all Bursa Malaysia-listed securities including stocks, ETFs, and unit trusts.',
+  },
+  {
+    title: 'Financial Data',
+    description:
+      'Income statements, balance sheets, cash flow statements, and key financial metrics updated regularly.',
+  },
+  {
+    title: 'Market Screener',
+    description:
+      'Filter and sort securities by market capitalisation, price changes, sector, and more. Find opportunities quickly.',
+  },
+];
 
 export default function AboutPage() {
   return (
-    <div className="max-w-3xl mx-auto">
-      <h1 className="text-2xl font-bold text-navy mb-6">
-        About KLSE MarketCap
-      </h1>
+    <div className="mx-auto max-w-3xl px-4 py-6">
+      <Breadcrumbs items={[{ label: 'About' }]} />
 
-      <section className="card p-6 mb-6">
-        <h2 className="text-lg font-semibold text-navy mb-3">What We Do</h2>
-        <p className="text-slate text-sm leading-relaxed">
-          KLSE MarketCap is a free market capitalisation screener for Bursa
-          Malaysia (KLSE) listed securities. We provide live prices, financial
-          data, charts, and company information for all listed stocks and ETFs
-          on the Malaysian stock exchange.
-        </p>
-        <p className="text-slate text-sm leading-relaxed mt-3">
-          Our mission is to make Malaysian financial data accessible, beautiful,
-          and easy to understand for everyone — from casual investors to seasoned
-          traders.
-        </p>
-      </section>
+      <h1 className="mb-4 text-2xl font-extrabold text-slate-800">About KLSE MarketCap</h1>
 
-      <section className="card p-6 mb-6">
-        <h2 className="text-lg font-semibold text-navy mb-3">Data Sources</h2>
-        <p className="text-slate text-sm leading-relaxed">
-          Market data is updated every 5 minutes during Bursa Malaysia trading
-          hours (9:00 AM — 12:30 PM, 2:30 PM — 5:00 PM MYT, Monday to Friday).
-          End-of-day data is updated 30 minutes after market close.
+      <div className="mb-8 space-y-4 text-sm leading-relaxed text-slate-500">
+        <p>
+          KLSE MarketCap is a market capitalisation screener for Bursa Malaysia listed securities.
+          Browse stocks, ETFs, and unit trusts in one place with live prices, financial data, and
+          peer comparisons. All prices are displayed in MYR (Malaysian Ringgit).
         </p>
-      </section>
+        <p>
+          Our goal is to make Malaysian market data approachable and easy to navigate. Whether you
+          are a casual investor checking a stock price or an active trader comparing sectors, KLSE
+          MarketCap provides the information you need in a clean, fast interface.
+        </p>
+      </div>
 
-      <section className="card p-6 mb-6 border-l-4 border-coral-light">
-        <h2 className="text-lg font-semibold text-navy mb-3">Disclaimer</h2>
-        <div className="text-slate text-sm leading-relaxed space-y-3">
-          <p>
-            KLSE MarketCap is for informational purposes only and does not
-            constitute financial, investment, or trading advice. The information
-            provided on this website should not be relied upon for making
-            investment decisions.
-          </p>
-          <p>
-            Data may be delayed, inaccurate, or incomplete. Always verify
-            information with official sources before making any investment
-            decisions. We are not licensed by the Securities Commission Malaysia
-            (SC) and do not provide financial advice.
-          </p>
-          <p>
-            Past performance is not indicative of future results. Investing in
-            securities carries risk, including the potential loss of principal.
-            You should consult a licensed financial advisor before making
-            investment decisions.
-          </p>
-          <p>
-            By using this website, you acknowledge that KLSE MarketCap, its
-            creators, and affiliates are not responsible for any losses or
-            damages arising from the use of information provided on this site.
-          </p>
+      <h2 className="mb-4 text-lg font-bold text-slate-800">Features</h2>
+      <div className="mb-8 grid gap-4 sm:grid-cols-3">
+        {features.map((feature) => (
+          <div key={feature.title} className="rounded-2xl bg-surface p-5 shadow-card">
+            <h3 className="mb-2 text-sm font-bold text-slate-800">{feature.title}</h3>
+            <p className="text-xs leading-relaxed text-slate-500">{feature.description}</p>
+          </div>
+        ))}
+      </div>
+
+      <h2 className="mb-4 text-lg font-bold text-slate-800">Market Hours</h2>
+      <div className="mb-8 rounded-2xl bg-surface p-5 shadow-card">
+        <p className="mb-3 text-sm text-slate-500">
+          Bursa Malaysia trading sessions (Monday to Friday, MYT):
+        </p>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="rounded-xl bg-white p-4">
+            <p className="text-xs font-semibold uppercase tracking-wider text-primary">Morning Session</p>
+            <p className="mt-1 text-lg font-bold text-slate-800">9:00 AM - 12:30 PM</p>
+          </div>
+          <div className="rounded-xl bg-white p-4">
+            <p className="text-xs font-semibold uppercase tracking-wider text-primary">Afternoon Session</p>
+            <p className="mt-1 text-lg font-bold text-slate-800">2:30 PM - 5:00 PM</p>
+          </div>
         </div>
-      </section>
+      </div>
 
-      <section className="card p-6">
-        <h2 className="text-lg font-semibold text-navy mb-3">Contact</h2>
-        <p className="text-slate text-sm">
-          For feedback, corrections, or partnership enquiries, contact us at{" "}
-          <a href="mailto:contact@klsemarketcap.com" className="text-sky hover:underline">
-            contact@klsemarketcap.com
-          </a>
+      <h2 className="mb-4 text-lg font-bold text-slate-800">Data Source</h2>
+      <div className="mb-8 space-y-2 text-sm leading-relaxed text-slate-500">
+        <p>
+          Price data is sourced from Yahoo Finance via the yahoo-finance2 library. Prices are
+          updated regularly during Bursa Malaysia trading hours.
         </p>
-      </section>
+        <p>
+          Financial statements, key metrics, and company profiles are refreshed weekly.
+        </p>
+      </div>
+
+      <div className="rounded-2xl border border-slate-300/20 bg-white p-5">
+        <h2 className="mb-2 text-sm font-bold text-slate-800">Disclaimer</h2>
+        <p className="text-xs leading-relaxed text-slate-500">
+          KLSE MarketCap provides general information only and does not constitute financial advice.
+          The information on this website is not intended to be a recommendation to buy or sell any
+          security. Always conduct your own research and consult a licensed financial adviser before
+          making investment decisions. Prices may be delayed. We make no warranties about the
+          accuracy or completeness of the data displayed.
+        </p>
+      </div>
     </div>
   );
 }

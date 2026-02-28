@@ -1,44 +1,30 @@
-import { Inter, JetBrains_Mono } from "next/font/google";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
-import "@/styles/globals.css";
-
-const inter = Inter({
-  subsets: ["latin"],
-  display: "swap",
-  variable: "--font-inter",
-});
-
-const jetbrainsMono = JetBrains_Mono({
-  subsets: ["latin"],
-  display: "swap",
-  variable: "--font-jetbrains",
-});
+import '@/styles/globals.css';
+import Navbar from '@/components/layout/Navbar';
+import Footer from '@/components/layout/Footer';
+import AuthProvider from '@/components/auth/AuthProvider';
+import { WatchlistProvider } from '@/lib/hooks/useWatchlist';
 
 export const metadata = {
   title: {
-    default: "KLSE MarketCap — Bursa Malaysia Stock Screener",
-    template: "%s | KLSE MarketCap",
+    default: 'KLSE MarketCap - Bursa Malaysia Stock Screener',
+    template: '%s | KLSE MarketCap',
   },
   description:
-    "Track every stock and ETF on Bursa Malaysia. Live prices, market cap rankings, financials, and charts for all KLSE-listed securities.",
-  metadataBase: new URL("https://klsemarketcap.com"),
-  openGraph: {
-    type: "website",
-    locale: "en_MY",
-    siteName: "KLSE MarketCap",
-  },
+    'Browse and compare all KLSE-listed stocks and ETFs by market capitalisation. Live prices, charts, financials, and peer comparison.',
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://klsemarketcap.com'),
 };
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable}`}>
-      <body className="font-sans min-h-screen">
-        <Header />
-        <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6">
-          {children}
-        </main>
-        <Footer />
+    <html lang="en">
+      <body className="bg-surface text-slate-800 antialiased">
+        <AuthProvider>
+          <WatchlistProvider>
+            <Navbar />
+            <main className="min-h-screen pt-16">{children}</main>
+            <Footer />
+          </WatchlistProvider>
+        </AuthProvider>
       </body>
     </html>
   );

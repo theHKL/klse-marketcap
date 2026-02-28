@@ -1,73 +1,50 @@
-import Link from "next/link";
-import { getSecurities } from "@/lib/queries";
-import { ITEMS_PER_PAGE } from "@/lib/constants";
-import ScreenerTable from "@/components/ScreenerTable";
-import Pagination from "@/components/Pagination";
+import { createServiceClient } from '@/lib/supabase/server';
+import { PAGE_SIZE, FUND_SECURITIES_SELECT } from '@/lib/constants';
+import { enrichWithSparklines } from '@/lib/sparkline-data';
+import ScreenerShell from '@/components/screener/ScreenerShell';
 
 export const revalidate = 60;
 
 export const metadata = {
-  title: "KLSE ETFs by Market Cap",
-  description:
-    "Browse all Bursa Malaysia listed ETFs. Compare expense ratios, AUM, and performance across Malaysian ETFs.",
+  title: 'KLSE ETFs',
+  description: 'Browse all KLSE-listed ETFs by market capitalisation.',
 };
 
-export default async function ETFsPage({ searchParams }) {
-  const params = await searchParams;
-  const sort = params?.sort || "market_cap";
-  const order = params?.order || "desc";
-  const page = Number(params?.page) || 1;
+export default async function EtfsPage() {
+  const supabase = createServiceClient();
 
-  const { data, count } = await getSecurities({
-    type: "etf",
-    sort,
-    order,
-    page,
-  });
+  const { data, count } = await supabase
+    .from('securities')
+    .select(FUND_SECURITIES_SELECT, { count: 'exact' })
+    .eq('type', 'etf')
+    .eq('is_actively_trading', true)
+    .order('etf_details(aum)', { ascending: false, nullsFirst: false })
+    .range(0, PAGE_SIZE - 1);
 
-  const totalPages = Math.ceil(count / ITEMS_PER_PAGE);
-  const startRank = (page - 1) * ITEMS_PER_PAGE + 1;
+  const total = count || 0;
+
+  // Flatten etf_details join
+  const flattened = (data || []).map(({ etf_details, ...rest }) => ({
+    ...rest,
+    aum: etf_details?.aum ?? null,
+    expense_ratio: etf_details?.expense_ratio ?? null,
+  }));
+
+  const enrichedData = await enrichWithSparklines(supabase, flattened);
 
   return (
-    <div>
-      {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-navy mb-1">ETFs</h1>
-        <p className="text-slate text-sm">
-          All Bursa Malaysia listed ETFs ranked by market cap
-        </p>
-      </div>
-
-      {/* Tab Navigation */}
-      <div className="flex items-center gap-2 mb-4">
-        <Link
-          href="/"
-          className="px-4 py-1.5 rounded-full text-sm font-medium text-slate hover:bg-mist hover:text-navy transition-colors"
-        >
-          All
-        </Link>
-        <Link
-          href="/stocks"
-          className="px-4 py-1.5 rounded-full text-sm font-medium text-slate hover:bg-mist hover:text-navy transition-colors"
-        >
-          Stocks
-        </Link>
-        <span className="px-4 py-1.5 rounded-full text-sm font-medium bg-sky text-white">
-          ETFs
-        </span>
-      </div>
-
-      {/* Screener Table */}
-      <ScreenerTable
-        securities={data}
-        type="etf"
-        sort={sort}
-        order={order}
-        startRank={startRank}
+    <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+      <ScreenerShell
+        initialTab="/etfs"
+        initialData={enrichedData}
+        initialPagination={{
+          page: 1,
+          limit: PAGE_SIZE,
+          total,
+          totalPages: Math.ceil(total / PAGE_SIZE),
+        }}
+        initialTotal={total}
       />
-
-      {/* Pagination */}
-      <Pagination currentPage={page} totalPages={totalPages} />
     </div>
   );
 }
